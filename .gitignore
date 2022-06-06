@@ -1,0 +1,5 @@
+*.suo
+*.user
+NET.Impl/.vs/*
+NET.Impl/**/bin/*
+NET.Impl/**/obj/*
