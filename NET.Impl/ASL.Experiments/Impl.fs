@@ -2,7 +2,6 @@
 
 open Newtonsoft.Json.Linq
 open System
-open System.Globalization
 
 type Continuation =
     | Next of string
@@ -15,6 +14,7 @@ type TimeoutParameters =
 type HeartbeatParameters =
     | HeartbeatSeconds of int
     | HeartbeatSecondsPath of string
+    | NotSpecified
 
 type WaitParameters =
     | Seconds of int
@@ -90,8 +90,7 @@ type StateMachine = {StartAt: string;
                      TimeoutSeconds: int;
                      States: State[]}
 
-and TaskState = {(*Id: string;*)
-                 Name: string;
+and TaskState = {Name: string;
                  Comment: string;
                  InputPath: string;
                  OutputPath: string;
@@ -105,8 +104,7 @@ and TaskState = {(*Id: string;*)
                  TimeoutParameters: TimeoutParameters;
                  HeartbeatParameters: HeartbeatParameters}
 
-and ParallelState = {(*Id: string;*)
-                     Name: string;
+and ParallelState = {Name: string;
                      Comment: string;
                      InputPath: string;
                      OutputPath: string;
@@ -118,8 +116,7 @@ and ParallelState = {(*Id: string;*)
                      Catch: Catcher[];
                      Branches: StateMachine[]}
 
-and MapState = {(*Id: string;*)
-                Name: string;
+and MapState = {Name: string;
                 Comment: string;
                 InputPath: string;
                 OutputPath: string;
@@ -133,8 +130,7 @@ and MapState = {(*Id: string;*)
                 ItemsPath: string;
                 MaxConcurrency: int}
 
-and PassState = {(*Id: string;*)
-                 Name: string;
+and PassState = {Name: string;
                  Comment: string;
                  InputPath: string;
                  OutputPath: string;
@@ -144,30 +140,26 @@ and PassState = {(*Id: string;*)
                  // TODO (std_string) : think about type
                  Result: JObject}
 
-and WaitState = {(*Id: string;*)
-                 Name: string;
+and WaitState = {Name: string;
                  Comment: string;
                  InputPath: string;
                  OutputPath: string;
                  Continuation: Continuation;
                  WaitParameters: WaitParameters}
 
-and ChoiceState = {(*Id: string;*)
-                   Name: string;
+and ChoiceState = {Name: string;
                    Comment: string;
                    InputPath: string;
                    OutputPath: string;
                    Choices: Choice[];
                    Default: string}
 
-and SuccessState = {(*Id: string;*)
-                    Name: string;
+and SucceedState = {Name: string;
                     Comment: string;
                     InputPath: string;
                     OutputPath: string}
 
-and FailState = {(*Id: string;*)
-                 Name: string;
+and FailState = {Name: string;
                  Comment: string;
                  Error: string;
                  Cause: string}
@@ -179,54 +171,54 @@ and State =
     | Pass of PassState
     | Wait of WaitState
     | Choice of ChoiceState
-    | Succeed of SuccessState
+    | Succeed of SucceedState
     | Fail of FailState
 
 type StateMachineParser() =
-
-    let timestampFormat = ""
 
     let checkAllowedKeys (source: JObject) (allowedKeys: seq<string>) =
         let allowedKeysSet = allowedKeys |> Set<string>
         source.Children() |> Seq.cast<JProperty> |> Seq.map (fun property -> property.Name) |> Seq.forall (fun key -> key |> allowedKeysSet.Contains)
 
     let parseContinuation (source: JObject) =
-        let nextState = source.["Next"] :?> JProperty
-        let isEnd = source.["End"] :?> JProperty
+        let nextState = source.["Next"]
+        let isEnd = source.["End"]
         match nextState, isEnd with
-        | _, null when nextState <> null -> nextState.Value.ToObject<string>() |> Continuation.Next
+        | _, null when nextState <> null -> nextState.ToObject<string>() |> Continuation.Next
         | null, _ when isEnd <> null ->
-            match isEnd.Value.ToObject<bool>() with
+            match isEnd.ToObject<bool>() with
             | true -> Continuation.End
             | false -> raise (InvalidOperationException("Bad Data"))
         | _ -> raise (InvalidOperationException("Bad Data"))
 
     let parseTimeoutParameters (source: JObject) =
-        let timeoutSeconds = source.["TimeoutSeconds"] :?> JProperty
-        let timeoutSecondsPath = source.["TimeoutSecondsPath"] :?> JProperty
+        let timeoutSeconds = source.["TimeoutSeconds"]
+        let timeoutSecondsPath = source.["TimeoutSecondsPath"]
         match timeoutSeconds, timeoutSecondsPath with
-        | _, null when timeoutSeconds <> null -> timeoutSeconds.Value.ToObject<int>() |> TimeoutParameters.TimeoutSeconds
-        | null, _ when timeoutSecondsPath <> null -> timeoutSecondsPath.Value.ToObject<string>() |> TimeoutParameters.TimeoutSecondsPath
+        | _, null when timeoutSeconds <> null -> timeoutSeconds.ToObject<int>() |> TimeoutParameters.TimeoutSeconds
+        | null, _ when timeoutSecondsPath <> null -> timeoutSecondsPath.ToObject<string>() |> TimeoutParameters.TimeoutSecondsPath
+        | null, null -> TimeoutParameters.TimeoutSeconds 60
         | _ -> raise (InvalidOperationException("Bad Data"))
 
     let parseHeartbeatParameters (source: JObject) =
-        let heartbeatSeconds = source.["HeartbeatSeconds"] :?> JProperty
-        let heartbeatSecondsPath = source.["HeartbeatSecondsPath"] :?> JProperty
+        let heartbeatSeconds = source.["HeartbeatSeconds"]
+        let heartbeatSecondsPath = source.["HeartbeatSecondsPath"]
         match heartbeatSeconds, heartbeatSecondsPath with
-        | _, null when heartbeatSeconds <> null -> heartbeatSeconds.Value.ToObject<int>() |> HeartbeatParameters.HeartbeatSeconds
-        | null, _ when heartbeatSecondsPath <> null -> heartbeatSecondsPath.Value.ToObject<string>() |> HeartbeatParameters.HeartbeatSecondsPath
+        | _, null when heartbeatSeconds <> null -> heartbeatSeconds.ToObject<int>() |> HeartbeatParameters.HeartbeatSeconds
+        | null, _ when heartbeatSecondsPath <> null -> heartbeatSecondsPath.ToObject<string>() |> HeartbeatParameters.HeartbeatSecondsPath
+        | null, null -> HeartbeatParameters.NotSpecified
         | _ -> raise (InvalidOperationException("Bad Data"))
 
     let parseWaitParameters (source: JObject) =
-        let seconds = source.["Seconds"] :?> JProperty
-        let secondsPath = source.["SecondsPath"] :?> JProperty
-        let timestamp = source.["Timestamp"] :?> JProperty
-        let timestampPath = source.["TimestampPath"] :?> JProperty
+        let seconds = source.["Seconds"]
+        let secondsPath = source.["SecondsPath"]
+        let timestamp = source.["Timestamp"]
+        let timestampPath = source.["TimestampPath"]
         match seconds, secondsPath, timestamp, timestampPath with
-        | _, null, null, null when seconds <> null -> seconds.Value.ToObject<int>() |> WaitParameters.Seconds
-        | null, _, null, null when secondsPath <> null -> secondsPath.Value.ToObject<string>() |> WaitParameters.SecondsPath
-        | null, null, _, null when timestamp <> null -> DateTime.ParseExact(timestamp.Value.ToObject<string>(), timestampFormat, CultureInfo.InvariantCulture) |> WaitParameters.Timestamp
-        | null, null, null, _ when timestampPath <> null -> timestampPath.Value.ToObject<string>() |> WaitParameters.TimestampPath
+        | _, null, null, null when seconds <> null -> seconds.ToObject<int>() |> WaitParameters.Seconds
+        | null, _, null, null when secondsPath <> null -> secondsPath.ToObject<string>() |> WaitParameters.SecondsPath
+        | null, null, _, null when timestamp <> null -> timestamp.ToObject<DateTime>() |> WaitParameters.Timestamp
+        | null, null, null, _ when timestampPath <> null -> timestampPath.ToObject<string>() |> WaitParameters.TimestampPath
         | _ -> raise (InvalidOperationException("Bad Data"))
 
     let createParameter (property: JProperty) =
@@ -302,18 +294,18 @@ type StateMachineParser() =
         | _ -> raise (InvalidOperationException("Bad Data"))
 
     let parseChoiceNext (allowNext: bool) (source: JObject) =
-        match source.["Next"] :?> JProperty with
+        match source.["Next"] with
         | nextProperty when (nextProperty <> null) <> allowNext -> raise (InvalidOperationException("Bad Data"))
         | null -> null
         | nextProperty -> nextProperty.ToObject<string>()
 
     member private this.GetOptionalValue<'TValue> (name: string, defaultValue: 'TValue, source: JObject) =
-        match source.[name] :?> JProperty with
+        match source.[name] with
         | null -> defaultValue
         | property -> property.ToObject<'TValue>()
 
     member private this.GetOptionalValue<'TValue> (name: string, predicate: 'TValue -> bool, defaultValue: 'TValue, source: JObject) =
-        match source.[name] :?> JProperty with
+        match source.[name] with
         | null -> defaultValue
         | property ->
             let value = property.ToObject<'TValue>()
@@ -322,7 +314,7 @@ type StateMachineParser() =
             | true -> value
 
     member private this.GetMandatoryValue<'TValue> (name: string, source: JObject) =
-        match source.[name] :?> JProperty with
+        match source.[name] with
         | null -> raise (InvalidOperationException("Bad Data"))
         | property -> property.ToObject<'TValue>()
 
@@ -370,7 +362,7 @@ type StateMachineParser() =
             | orProperty ->
                 orProperty.Children() |> Seq.cast<JObject> |> Seq.map this.ParseBoolExpression |> Seq.toArray |> BoolExpr.OrExpr
         | andProperty ->
-            andProperty.Children() |> Seq.cast<JObject> |> Seq.map this.ParseBoolExpression |> Seq.toArray |> BoolExpr.OrExpr
+            andProperty.Children() |> Seq.cast<JObject> |> Seq.map this.ParseBoolExpression |> Seq.toArray |> BoolExpr.AndExpr
 
     member private this.ParseChoice(source: JObject, allowNext: bool) =
         let next = source |> parseChoiceNext allowNext
@@ -519,7 +511,7 @@ type StateMachineParser() =
             let continuation = source |> parseContinuation
             let resultPath = this.GetOptionalValue<string>("ResultPath", null, source)
             let parameters = source |> parseParameters "Parameters"
-            let result = source.["Result"] :?> JObject
+            let result = if source.["Result"] = null then null else new JObject(source.["Result"] :?> JObject)
             {PassState.Name = name;
              PassState.Comment = comment;
              PassState.InputPath = inputPath;
@@ -573,10 +565,10 @@ type StateMachineParser() =
             let comment = this.GetOptionalValue<string>("Comment", null, source)
             let inputPath = this.GetOptionalValue<string>("InputPath", null, source)
             let outputPath = this.GetOptionalValue<string>("OutputPath", null, source)
-            {SuccessState.Name = name;
-             SuccessState.Comment = comment;
-             SuccessState.InputPath = inputPath;
-             SuccessState.OutputPath = outputPath} |> State.Succeed
+            {SucceedState.Name = name;
+             SucceedState.Comment = comment;
+             SucceedState.InputPath = inputPath;
+             SucceedState.OutputPath = outputPath} |> State.Succeed
 
     member private this.ParseFailState(name: string, source: JObject) =
         match ["Type"; "Comment"; "Error"; "Cause"] |> checkAllowedKeys source with
