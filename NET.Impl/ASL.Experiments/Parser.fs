@@ -229,68 +229,73 @@ type StateMachineParser() =
         | null -> null
         | parameters -> parameters.Children() |> Seq.cast<JProperty> |> Seq.map createParameter |> Seq.toArray
 
+    let checkValue (expectedType: JTokenType) (value: JToken) =
+        match value.Type = expectedType with
+        | false -> raise (InvalidOperationException("Bad Data"))
+        | true -> value
+
     let parseConditionCheck (source: JObject) =
         let condition = source.Children() |> Seq.cast<JProperty> |> Seq.filter (fun property -> property.Name <> "Variable" && property.Name <> "Next") |> Seq.exactlyOne
         match condition.Name with
-        | "StringEquals" -> condition.Value.ToObject<string>() |> ConditionCheck.StringEquals
-        | "StringEqualsPath" -> condition.Value.ToObject<string>() |> ConditionCheck.StringEqualsPath
-        | "StringLessThan" -> condition.Value.ToObject<string>() |> ConditionCheck.StringLessThan
-        | "StringLessThanPath" -> condition.Value.ToObject<string>() |> ConditionCheck.StringLessThanPath
-        | "StringGreaterThan" -> condition.Value.ToObject<string>() |> ConditionCheck.StringGreaterThan
-        | "StringGreaterThanPath" -> condition.Value.ToObject<string>() |> ConditionCheck.StringGreaterThanPath
-        | "StringLessThanEquals" -> condition.Value.ToObject<string>() |> ConditionCheck.StringLessThanEquals
-        | "StringLessThanEqualsPath" -> condition.Value.ToObject<string>() |> ConditionCheck.StringLessThanEqualsPath
-        | "StringGreaterThanEquals" -> condition.Value.ToObject<string>() |> ConditionCheck.StringGreaterThanEquals
-        | "StringGreaterThanEqualsPath" -> condition.Value.ToObject<string>() |> ConditionCheck.StringGreaterThanEqualsPath
-        | "StringMatches" -> condition.Value.ToObject<string>() |> ConditionCheck.StringMatches
+        | "StringEquals" -> (condition.Value |> checkValue JTokenType.String).ToObject<string>() |> ConditionCheck.StringEquals
+        | "StringEqualsPath" -> (condition.Value |> checkValue JTokenType.String).ToObject<string>() |> ConditionCheck.StringEqualsPath
+        | "StringLessThan" -> (condition.Value |> checkValue JTokenType.String).ToObject<string>() |> ConditionCheck.StringLessThan
+        | "StringLessThanPath" -> (condition.Value |> checkValue JTokenType.String).ToObject<string>() |> ConditionCheck.StringLessThanPath
+        | "StringGreaterThan" -> (condition.Value |> checkValue JTokenType.String).ToObject<string>() |> ConditionCheck.StringGreaterThan
+        | "StringGreaterThanPath" -> (condition.Value |> checkValue JTokenType.String).ToObject<string>() |> ConditionCheck.StringGreaterThanPath
+        | "StringLessThanEquals" -> (condition.Value |> checkValue JTokenType.String).ToObject<string>() |> ConditionCheck.StringLessThanEquals
+        | "StringLessThanEqualsPath" -> (condition.Value |> checkValue JTokenType.String).ToObject<string>() |> ConditionCheck.StringLessThanEqualsPath
+        | "StringGreaterThanEquals" -> (condition.Value |> checkValue JTokenType.String).ToObject<string>() |> ConditionCheck.StringGreaterThanEquals
+        | "StringGreaterThanEqualsPath" -> (condition.Value |> checkValue JTokenType.String).ToObject<string>() |> ConditionCheck.StringGreaterThanEqualsPath
+        | "StringMatches" -> (condition.Value |> checkValue JTokenType.String).ToObject<string>() |> ConditionCheck.StringMatches
         | "NumericEquals" ->
             match condition.Value.Type with
             | JTokenType.Integer -> condition.Value.ToObject<int>() |> ConditionCheck.NumericEqualsI
             | JTokenType.Float -> condition.Value.ToObject<float>() |> ConditionCheck.NumericEqualsF
             | _ -> raise (InvalidOperationException("Bad Data"))
-        | "NumericEqualsPath" -> condition.Value.ToObject<string>() |> ConditionCheck.NumericEqualsPath
+        | "NumericEqualsPath" -> (condition.Value |> checkValue JTokenType.String).ToObject<string>() |> ConditionCheck.NumericEqualsPath
         | "NumericLessThan" ->
             match condition.Value.Type with
             | JTokenType.Integer -> condition.Value.ToObject<int>() |> ConditionCheck.NumericLessThanI
             | JTokenType.Float -> condition.Value.ToObject<float>() |> ConditionCheck.NumericLessThanF
             | _ -> raise (InvalidOperationException("Bad Data"))
-        | "NumericLessThanPath" -> condition.Value.ToObject<string>() |> ConditionCheck.NumericLessThanPath
+        | "NumericLessThanPath" -> (condition.Value |> checkValue JTokenType.String).ToObject<string>() |> ConditionCheck.NumericLessThanPath
         | "NumericGreaterThan" ->
             match condition.Value.Type with
             | JTokenType.Integer -> condition.Value.ToObject<int>() |> ConditionCheck.NumericGreaterThanI
             | JTokenType.Float -> condition.Value.ToObject<float>() |> ConditionCheck.NumericGreaterThanF
             | _ -> raise (InvalidOperationException("Bad Data"))
-        | "NumericGreaterThanPath" -> condition.Value.ToObject<string>() |> ConditionCheck.NumericGreaterThanPath
+        | "NumericGreaterThanPath" -> (condition.Value |> checkValue JTokenType.String).ToObject<string>() |> ConditionCheck.NumericGreaterThanPath
         | "NumericLessThanEquals" ->
             match condition.Value.Type with
             | JTokenType.Integer -> condition.Value.ToObject<int>() |> ConditionCheck.NumericLessThanEqualsI
             | JTokenType.Float -> condition.Value.ToObject<float>() |> ConditionCheck.NumericLessThanEqualsF
             | _ -> raise (InvalidOperationException("Bad Data"))
-        | "NumericLessThanEqualsPath" -> condition.Value.ToObject<string>() |> ConditionCheck.NumericLessThanEqualsPath
+        | "NumericLessThanEqualsPath" -> (condition.Value |> checkValue JTokenType.String).ToObject<string>() |> ConditionCheck.NumericLessThanEqualsPath
         | "NumericGreaterThanEquals" ->
             match condition.Value.Type with
             | JTokenType.Integer -> condition.Value.ToObject<int>() |> ConditionCheck.NumericGreaterThanEqualsI
             | JTokenType.Float -> condition.Value.ToObject<float>() |> ConditionCheck.NumericGreaterThanEqualsF
             | _ -> raise (InvalidOperationException("Bad Data"))
-        | "NumericGreaterThanEqualsPath" -> condition.Value.ToObject<string>() |> ConditionCheck.NumericGreaterThanEqualsPath
-        | "BooleanEquals"-> condition.Value.ToObject<bool>() |> ConditionCheck.BooleanEquals
-        | "BooleanEqualsPath" -> condition.Value.ToObject<string>() |> ConditionCheck.BooleanEqualsPath
-        | "TimestampEquals" -> condition.Value.ToObject<DateTime>() |> ConditionCheck.TimestampEquals
-        | "TimestampEqualsPath" -> condition.Value.ToObject<string>() |> ConditionCheck.TimestampEqualsPath
-        | "TimestampLessThan" -> condition.Value.ToObject<DateTime>() |> ConditionCheck.TimestampLessThan
-        | "TimestampLessThanPath" -> condition.Value.ToObject<string>() |> ConditionCheck.TimestampLessThanPath
-        | "TimestampGreaterThan" -> condition.Value.ToObject<DateTime>() |> ConditionCheck.TimestampGreaterThan
-        | "TimestampGreaterThanPath" -> condition.Value.ToObject<string>() |> ConditionCheck.TimestampGreaterThanPath
-        | "TimestampLessThanEquals" -> condition.Value.ToObject<DateTime>() |> ConditionCheck.TimestampLessThanEquals
-        | "TimestampLessThanEqualsPath" -> condition.Value.ToObject<string>() |> ConditionCheck.TimestampLessThanEqualsPath
-        | "TimestampGreaterThanEquals" -> condition.Value.ToObject<DateTime>() |> ConditionCheck.TimestampGreaterThanEquals
-        | "TimestampGreaterThanEqualsPath" -> condition.Value.ToObject<string>() |> ConditionCheck.TimestampGreaterThanEqualsPath
-        | "IsNull" -> condition.Value.ToObject<bool>() |> ConditionCheck.IsNull
-        | "IsPresent" -> condition.Value.ToObject<bool>() |> ConditionCheck.IsPresent
-        | "IsNumeric" -> condition.Value.ToObject<bool>() |> ConditionCheck.IsNumeric
-        | "IsString" -> condition.Value.ToObject<bool>() |> ConditionCheck.IsString
-        | "IsBoolean" -> condition.Value.ToObject<bool>() |> ConditionCheck.IsBoolean
-        | "IsTimestamp" -> condition.Value.ToObject<bool>() |> ConditionCheck.IsTimestamp
+        | "NumericGreaterThanEqualsPath" -> (condition.Value |> checkValue JTokenType.String).ToObject<string>() |> ConditionCheck.NumericGreaterThanEqualsPath
+        | "BooleanEquals"-> (condition.Value |> checkValue JTokenType.Boolean).ToObject<bool>() |> ConditionCheck.BooleanEquals
+        | "BooleanEqualsPath" -> (condition.Value |> checkValue JTokenType.String).ToObject<string>() |> ConditionCheck.BooleanEqualsPath
+        | "TimestampEquals" -> (condition.Value |> checkValue JTokenType.Date).ToObject<DateTime>() |> ConditionCheck.TimestampEquals
+        | "TimestampEqualsPath" -> (condition.Value |> checkValue JTokenType.String).ToObject<string>() |> ConditionCheck.TimestampEqualsPath
+        | "TimestampLessThan" -> (condition.Value |> checkValue JTokenType.Date).ToObject<DateTime>() |> ConditionCheck.TimestampLessThan
+        | "TimestampLessThanPath" -> (condition.Value |> checkValue JTokenType.String).ToObject<string>() |> ConditionCheck.TimestampLessThanPath
+        | "TimestampGreaterThan" -> (condition.Value |> checkValue JTokenType.Date).ToObject<DateTime>() |> ConditionCheck.TimestampGreaterThan
+        | "TimestampGreaterThanPath" -> (condition.Value |> checkValue JTokenType.String).ToObject<string>() |> ConditionCheck.TimestampGreaterThanPath
+        | "TimestampLessThanEquals" -> (condition.Value |> checkValue JTokenType.Date).ToObject<DateTime>() |> ConditionCheck.TimestampLessThanEquals
+        | "TimestampLessThanEqualsPath" -> (condition.Value |> checkValue JTokenType.String).ToObject<string>() |> ConditionCheck.TimestampLessThanEqualsPath
+        | "TimestampGreaterThanEquals" -> (condition.Value |> checkValue JTokenType.Date).ToObject<DateTime>() |> ConditionCheck.TimestampGreaterThanEquals
+        | "TimestampGreaterThanEqualsPath" -> (condition.Value |> checkValue JTokenType.String).ToObject<string>() |> ConditionCheck.TimestampGreaterThanEqualsPath
+        | "IsNull" -> (condition.Value |> checkValue JTokenType.Boolean).ToObject<bool>() |> ConditionCheck.IsNull
+        | "IsPresent" -> (condition.Value |> checkValue JTokenType.Boolean).ToObject<bool>() |> ConditionCheck.IsPresent
+        | "IsNumeric" -> (condition.Value |> checkValue JTokenType.Boolean).ToObject<bool>() |> ConditionCheck.IsNumeric
+        | "IsString" -> (condition.Value |> checkValue JTokenType.Boolean).ToObject<bool>() |> ConditionCheck.IsString
+        | "IsBoolean" -> (condition.Value |> checkValue JTokenType.Boolean).ToObject<bool>() |> ConditionCheck.IsBoolean
+        | "IsTimestamp" -> (condition.Value |> checkValue JTokenType.Boolean).ToObject<bool>() |> ConditionCheck.IsTimestamp
         | _ -> raise (InvalidOperationException("Bad Data"))
 
     let parseChoiceNext (allowNext: bool) (source: JObject) =
@@ -360,9 +365,13 @@ type StateMachineParser() =
                 | notProperty ->
                     notProperty :?> JObject |> this.ParseBoolExpression |> BoolExpr.NotExpr
             | orProperty ->
-                orProperty.Children() |> Seq.cast<JObject> |> Seq.map this.ParseBoolExpression |> Seq.toArray |> BoolExpr.OrExpr
+                match orProperty.Children() |> Seq.cast<JObject> |> Seq.map this.ParseBoolExpression |> Seq.toArray with
+                | subexprs when subexprs.Length < 2 -> raise (InvalidOperationException("Bad Data"))
+                | subexprs -> subexprs |> BoolExpr.OrExpr
         | andProperty ->
-            andProperty.Children() |> Seq.cast<JObject> |> Seq.map this.ParseBoolExpression |> Seq.toArray |> BoolExpr.AndExpr
+            match andProperty.Children() |> Seq.cast<JObject> |> Seq.map this.ParseBoolExpression |> Seq.toArray with
+            | subexprs when subexprs.Length < 2 -> raise (InvalidOperationException("Bad Data"))
+            | subexprs -> subexprs |> BoolExpr.AndExpr
 
     member private this.ParseChoice(source: JObject, allowNext: bool) =
         let next = source |> parseChoiceNext allowNext

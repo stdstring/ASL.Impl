@@ -194,6 +194,12 @@ type StateMachineParserTests() =
          ChoiceState.Default = defaultState} |> State.Choice
 
     [<Test>]
+    member public this.ParseCommonErrors() =
+        (fun() -> "{\"States\": {\"S0\": {\"Type\": \"Succeed\"}}}" |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        (fun() -> "{\"States\": {\"S0\": {\"Comment\": \"IDDQD\"}}}" |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        (fun() -> "{\"StartAt\": \"S0\"}" |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+
+    [<Test>]
     member public this.ParseFailState() =
         let stateS0 = "{\"Type\": \"Fail\", \"Comment\": \"IDDQD\", \"Error\": \"DNMD\", \"Cause\": \"IDKFA\"}"
         let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": " + stateS0 + "}}" |> parser.Parse
@@ -201,11 +207,25 @@ type StateMachineParserTests() =
         Assert.AreEqual(expected, actual)
 
     [<Test>]
+    member public this.ParseFailStateWithErrors() =
+        // Without Error
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Fail\", \"Cause\": \"IDKFA\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // Without Cause
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Fail\", \"Error\": \"DNMD\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+
+    [<Test>]
     member public this.ParseSucceedState() =
         let stateS0 = "{\"Type\": \"Succeed\", \"Comment\": \"IDDQD\", \"InputPath\": \"$.input\", \"OutputPath\": \"$.output\"}"
         let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": " + stateS0 + "}}" |> parser.Parse
         let expected = [|createSucceedState "S0" "IDDQD" "$.input" "$.output"|] |> createStateMachine "S0" null null -1
         Assert.AreEqual(expected, actual)
+
+    [<Test>]
+    member public this.ParseSucceedStateWithErrors() =
+        // Nothing
+        ()
 
     [<Test>]
     member public this.ParseWaitState() =
@@ -251,6 +271,63 @@ type StateMachineParserTests() =
         Assert.AreEqual(expected, actual)
 
     [<Test>]
+    member public this.ParseWaitStateWithErrors() =
+        // End, Without Seconds, SecondsPath, Timestamp, TimestampPath
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Wait\", \"End\": true}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // Next, Without Seconds, SecondsPath, Timestamp, TimestampPath
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Wait\", \"Next\": \"S1\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // End, With Seconds, SecondsPath
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Wait\", \"End\": true, \"Seconds\": 13, \"SecondsPath\": \"$.seconds\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // Next, With Seconds, SecondsPath
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Wait\", \"Next\": \"S1\", \"Seconds\": 13, \"SecondsPath\": \"$.seconds\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // End, With Seconds, Timestamp
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Wait\", \"End\": true, \"Seconds\": 13, \"Timestamp\": \"2022-01-31T01:02:03Z\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // Next, With Seconds, Timestamp
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Wait\", \"Next\": \"S1\", \"Seconds\": 13, \"Timestamp\": \"2022-01-31T01:02:03Z\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // End, With Seconds, TimestampPath
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Wait\", \"End\": true, \"Seconds\": 13, \"TimestampPath\": \"$.timestamp\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // Next, With Seconds, TimestampPath
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Wait\", \"Next\": \"S1\", \"Seconds\": 13, \"TimestampPath\": \"$.timestamp\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // End, With SecondsPath, Timestamp
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Wait\", \"End\": true, \"SecondsPath\": \"$.seconds\", \"Timestamp\": \"2022-01-31T01:02:03Z\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // Next, With SecondsPath, Timestamp
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Wait\", \"Next\": \"S1\", \"SecondsPath\": \"$.seconds\", \"Timestamp\": \"2022-01-31T01:02:03Z\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // End, With SecondsPath, TimestampPath
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Wait\", \"End\": true, \"SecondsPath\": \"$.seconds\", \"TimestampPath\": \"$.timestamp\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // Next, With SecondsPath, TimestampPath
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Wait\", \"Next\": \"S1\", \"SecondsPath\": \"$.seconds\", \"TimestampPath\": \"$.timestamp\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // End, With Timestamp, TimestampPath
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Wait\", \"End\": true, \"Timestamp\": \"2022-01-31T01:02:03Z\", \"TimestampPath\": \"$.timestamp\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // Next, With Timestamp, TimestampPath
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Wait\", \"Next\": \"S1\", \"Timestamp\": \"2022-01-31T01:02:03Z\", \"TimestampPath\": \"$.timestamp\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // Without End, Next, With Seconds
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Wait\", \"Seconds\": 13}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // Without End, Next, With SecondsPath
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Wait\", \"SecondsPath\": \"$.seconds\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // Without End, Next, With Timestamp
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Wait\", \"Timestamp\": \"2022-01-31T01:02:03Z\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // Without End, Next, With TimestampPath
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Wait\", \"TimestampPath\": \"$.timestamp\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+
+    [<Test>]
     member public this.ParsePassState() =
         let inputPath = "\"InputPath\": \"$.input\""
         let outputPath = "\"OutputPath\": \"$.output\""
@@ -278,6 +355,15 @@ type StateMachineParserTests() =
         let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": " + stateS0 + "}}" |> parser.Parse
         let expected = [|createPassState "S0" "IDDQD" "$.input" "$.output" (Continuation.Next "S1") "$.data" ([|createParameter "item.$" "$.value"|]) resultObj|] |> createStateMachine "S0" null null -1
         Assert.AreEqual(expected, actual)
+
+    [<Test>]
+    member public this.ParsePassStateWithErrors() =
+        // Without End, Next
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Pass\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // With End = false
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Pass\", \"End\": false}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
 
     [<Test>]
     member public this.ParseTaskState() =
@@ -367,6 +453,40 @@ type StateMachineParserTests() =
         Assert.AreEqual(expected, actual)
 
     [<Test>]
+    member public this.ParseTaskStateWithErrors() =
+        // Without End, Next
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Task\", \"Resource\": \"some-rs\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // With End = false
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Task\", \"End\": false, \"Resource\": \"some-rs\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // End, Without Resource
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Task\", \"End\": true}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // Next, Without Resource
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Task\", \"Next\": \"S1\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // End, With TimeoutSeconds and TimeoutSecondsPath
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Task\", \"End\": true, \"Resource\": \"some-rs\", \"TimeoutSeconds\": 60, \"TimeoutSecondsPath\": \"$.timeout\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // Next, With TimeoutSeconds and TimeoutSecondsPath
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Task\", \"Next\": \"S1\", \"Resource\": \"some-rs\", \"TimeoutSeconds\": 60, \"TimeoutSecondsPath\": \"$.timeout\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // End, With HeartbeatSeconds and HeartbeatSecondsPath
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Task\", \"End\": true, \"Resource\": \"some-rs\", \"HeartbeatSeconds\": 45, \"HeartbeatSecondsPath\": \"$.heartbeat\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // Next, With HeartbeatSeconds and HeartbeatSecondsPath
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Task\", \"Next\": \"S1\", \"Resource\": \"some-rs\", \"HeartbeatSeconds\": 45, \"HeartbeatSecondsPath\": \"$.heartbeat\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // TODO (std_string) : think about impl and check
+        (*// End, With HeartbeatSeconds LE TimeoutSeconds
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Task\", \"End\": true, \"Resource\": \"some-rs\", \"TimeoutSeconds\": 45, \"HeartbeatSeconds\": 71}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // Next, With HeartbeatSeconds LE TimeoutSeconds
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Task\", \"Next\": \"S1\", \"Resource\": \"some-rs\", \"TimeoutSeconds\": 45, \"HeartbeatSeconds\": 71}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore*)
+
+    [<Test>]
     member public this.ParseMapState() =
         let inputPath = "\"InputPath\": \"$.input\""
         let outputPath = "\"OutputPath\": \"$.output\""
@@ -393,7 +513,7 @@ type StateMachineParserTests() =
         let stateS0Obj = createMapState "S0" "IDDQD" "$.input" "$.output" (Continuation.Next "S1") "$.data" parametersObj resultSelectorObj Array.empty Array.empty iteratorObj "$.Item" 1
         let expected = [|stateS0Obj|] |> createStateMachine "S0" null null -1
         Assert.AreEqual(expected, actual)
-        // End, wit Retry, with Catch
+        // End, with Retry, with Catch
         let stateS0 = "{\"Type\": \"Map\", \"Comment\": \"IDDQD\", " + inputPath + ", " + outputPath + ", \"End\": true, " + resultPath + ", " + parameters + ", " + resultSelector + ", " + retry + ", " + catch + ", " + mapDetails + "}"
         let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": " + stateS0 + "}}" |> parser.Parse
         let stateS0Obj = createMapState "S0" "IDDQD" "$.input" "$.output" Continuation.End "$.data" parametersObj resultSelectorObj retryObj catchObj iteratorObj "$.Item" 1
@@ -405,6 +525,22 @@ type StateMachineParserTests() =
         let stateS0Obj = createMapState "S0" "IDDQD" "$.input" "$.output" (Continuation.Next "S1") "$.data" parametersObj resultSelectorObj retryObj catchObj iteratorObj "$.Item" 1
         let expected = [|stateS0Obj|] |> createStateMachine "S0" null null -1
         Assert.AreEqual(expected, actual)
+
+    [<Test>]
+    member public this.ParseMapStateWithErrors() =
+        let iterator = "\"Iterator\": {\"StartAt\": \"It0\", \"States\": {\"It0\": {\"Type\": \"Task\", \"End\": true, \"Resource\": \"rs\"}}}"
+        // Without End, Next
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Map\", " + iterator + "}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // With End = false
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Map\", \"End\": false, " + iterator + "}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // End, without Iterator
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Map\", \"End\": true}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // Next, without Iterator
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Map\", \"Next\": \"S1\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
 
     [<Test>]
     member public this.ParseParallelState() =
@@ -448,6 +584,24 @@ type StateMachineParserTests() =
         let stateS0Obj = createParallelState "S0" "IDDQD" "$.input" "$.output" (Continuation.Next "S1") "$.data" parametersObj resultSelectorObj retryObj catchObj [|branch1Obj; branch2Obj|]
         let expected = [|stateS0Obj|] |> createStateMachine "S0" null null -1
         Assert.AreEqual(expected, actual)
+
+    [<Test>]
+    member public this.ParseParallelStateWithErrors() =
+        let branch1 = "{\"StartAt\": \"B10\", \"States\": {\"B10\": {\"Type\": \"Task\", \"End\": true, \"Resource\": \"rs1\"}}}"
+        let branch2 = "{\"StartAt\": \"B20\", \"States\": {\"B20\": {\"Type\": \"Task\", \"End\": true, \"Resource\": \"rs2\"}}}"
+        let branches = "\"Branches\": [" + branch1 + ", " + branch2 + "]"
+        // Without End, Next
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Parallel\", " + branches + "}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // With End = false
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Parallel\", \"End\": false, " + branches + "}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // End, without Branches
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Parallel\", \"End\": true}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // Next, without Branches
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Parallel\", \"Next\": \"S1\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
 
     [<Test>]
     member public this.ParseDataTestExpressionChoiceState() =
@@ -741,3 +895,153 @@ type StateMachineParserTests() =
         let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": " + stateS0 + "}}" |> parser.Parse
         let expected = [|createChoiceState "S0" "IDDQD" "$.input" "$.output" [|{Choice.Rule = [|[|test1Obj; test2Obj|] |> createOrExpression; test3Obj |> BoolExpr.TrueExpr|] |> BoolExpr.AndExpr; Choice.Next = "S1"}|] null|] |> createStateMachine "S0" null null -1
         Assert.AreEqual(expected, actual)
+
+    [<Test>]
+    member public this.ParseChoiceStateWithErrors() =
+        // without Choices
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\"}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // without variable
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"StringEquals\": \"IDDQD\", \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // without data-test expression
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<ArgumentException> |> ignore
+        // with unknown data-test expression
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"StringEqualsXXX\": \"IDDQD\", \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // without next
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"StringEquals\": \"IDDQD\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // with next inside boolean expression
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Not\": {\"Variable\": \"$.var\", \"StringEquals\": \"IDDQD\", \"Next\": \"S1\"}}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // with empty AND expression
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"And\": [], \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // with single item AND expression
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"And\": [{\"Variable\": \"$.var\", \"StringEquals\": \"IDDQD\"}], \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // with empty OR expression
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Or\": [], \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // with single item OR expression
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Or\": [{\"Variable\": \"$.var\", \"StringEquals\": \"IDDQD\"}], \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // StringEquals argument isn't a string
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"StringEquals\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // StringEqualsPath argument isn't a string
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"StringEqualsPath\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // StringLessThan argument isn't a string
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"StringLessThan\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // StringLessThanPath argument isn't a string
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"StringLessThanPath\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // StringGreaterThan argument isn't a string
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"StringGreaterThan\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // StringGreaterThanPath argument isn't a string
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"StringGreaterThanPath\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // StringLessThanEquals argument isn't a string
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"StringLessThanEquals\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // StringLessThanEqualsPath argument isn't a string
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"StringLessThanEqualsPath\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // StringGreaterThanEquals argument isn't a string
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"StringGreaterThanEquals\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // StringGreaterThanEqualsPath argument isn't a string
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"StringGreaterThanEqualsPath\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // StringMatches argument isn't a string
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"StringMatches\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // NumericEquals argument isn't a number
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"NumericEquals\": \"666\", \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // NumericEqualsPath argument isn't a string
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"NumericEqualsPath\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // NumericLessThan argument isn't a number
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"NumericLessThan\": \"666\", \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // NumericLessThanPath argument isn't a string
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"NumericLessThanPath\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // NumericGreaterThan argument isn't a number
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"NumericGreaterThan\": \"666\", \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // NumericGreaterThanPath argument isn't a string
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"NumericGreaterThanPath\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // NumericLessThanEquals argument isn't a number
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"NumericLessThanEquals\": \"666\", \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // NumericLessThanEqualsPath argument isn't a string
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"NumericLessThanEqualsPath\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // NumericGreaterThanEquals argument isn't a number
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"NumericGreaterThanEquals\": \"666\", \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // NumericGreaterThanEqualsPath argument isn't a string
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"NumericGreaterThanEqualsPath\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // BooleanEquals argument isn't a bool
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"BooleanEquals\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // BooleanEqualsPath argument isn't a string
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"BooleanEqualsPath\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // TimestampEquals argument isn't a timestamp
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"TimestampEquals\": \"666\", \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // TimestampEqualsPath argument isn't a string
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"TimestampEqualsPath\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // TimestampLessThan argument isn't a timestamp
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"TimestampLessThan\": \"666\", \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // TimestampLessThanPath argument isn't a string
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"TimestampLessThanPath\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // TimestampGreaterThan argument isn't a timestamp
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"TimestampGreaterThan\": \"666\", \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // TimestampGreaterThanPath argument isn't a string
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"TimestampGreaterThanPath\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // TimestampLessThanEquals argument isn't a timestamp
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"TimestampLessThanEquals\": \"666\", \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // TimestampLessThanEqualsPath argument isn't a string
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"TimestampLessThanEqualsPath\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // TimestampGreaterThanEquals argument isn't a timestamp
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"TimestampGreaterThanEquals\": \"666\", \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // TimestampGreaterThanEqualsPath argument isn't a string
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"TimestampGreaterThanEqualsPath\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // IsNull argument isn't a bool
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"IsNull\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // IsPresent argument isn't a bool
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"IsPresent\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // IsNumeric argument isn't a bool
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"IsNumeric\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // IsString argument isn't a bool
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"IsString\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // IsBoolean argument isn't a bool
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"IsBoolean\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
+        // IsTimestamp argument isn't a bool
+        let actual = "{\"StartAt\": \"S0\", \"States\": {\"S0\": {\"Type\": \"Choice\", \"Choices\": [{\"Variable\": \"$.var\", \"IsTimestamp\": 666, \"Next\": \"S1\"}]}}}"
+        (fun() -> actual |> parser.Parse |> ignore) |> Assert.Throws<InvalidOperationException> |> ignore
