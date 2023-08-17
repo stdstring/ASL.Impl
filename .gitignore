@@ -1,0 +1,5 @@
+*.suo
+*.user
+ASL.Impl/.vs/*
+ASL.Impl/**/bin/*
+ASL.Impl/**/obj/*
