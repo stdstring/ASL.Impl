@@ -8,6 +8,7 @@
   <ItemGroup>
     <Compile Include="StateDefsTests.fs" />
     <Compile Include="StateMachineParserTests.fs" />
+    <Compile Include="StateMachineValidatorTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
