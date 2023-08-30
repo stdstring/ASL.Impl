@@ -53,7 +53,7 @@ type public FailState() =
     interface IState with
         member this.StateType = StateType.Fail
         member this.Validate() =
-            (this.Name |> System.String.IsNullOrEmpty |> not) &&
+            (this.Name |> NameValidator.IsValid) &&
             (this.Error |> System.String.IsNullOrEmpty |> not) &&
             (this.Cause |> System.String.IsNullOrEmpty |> not)
 
@@ -69,7 +69,7 @@ type public SucceedState() =
     interface IState with
         member this.StateType = StateType.Succeed
         member this.Validate() =
-            (this.Name |> System.String.IsNullOrEmpty |> not)
+            (this.Name |> NameValidator.IsValid)
 
 type public ConditionCheck =
     | StringEquals of string
@@ -141,7 +141,7 @@ type public ChoiceState() =
     interface IState with
         member this.StateType = StateType.Choice
         member this.Validate() =
-            (this.Name |> System.String.IsNullOrEmpty |> not) &&
+            (this.Name |> NameValidator.IsValid) &&
             (this.Choices.Length > 0)
 
 type public WaitParameters =
@@ -165,7 +165,7 @@ type public WaitState() =
     interface IState with
         member this.StateType = StateType.Wait
         member this.Validate() =
-            (this.Name |> System.String.IsNullOrEmpty |> not) &&
+            (this.Name |> NameValidator.IsValid) &&
             (this.Continuation <> Continuation.None) &&
             (this.WaitParameters <> WaitParameters.None)
 
@@ -186,19 +186,19 @@ type public PassState() =
     interface IState with
         member this.StateType = StateType.Pass
         member this.Validate() =
-            (this.Name |> System.String.IsNullOrEmpty |> not) &&
+            (this.Name |> NameValidator.IsValid) &&
             (this.Continuation <> Continuation.None)
 
 type public Retrier = {ErrorEquals: string[]; IntervalSeconds: int; MaxAttempts: int; BackoffRate: float}
 
 type public Catcher = {ErrorEquals: string[]; Next: string; ResultPath: string}
 
-type TimeoutParameters =
+type public TimeoutParameters =
     | None
     | TimeoutSeconds of int
     | TimeoutSecondsPath of string
 
-type HeartbeatParameters =
+type public HeartbeatParameters =
     | None
     | HeartbeatSeconds of int
     | HeartbeatSecondsPath of string
@@ -226,7 +226,7 @@ type public TaskState() =
     interface IState with
         member this.StateType = StateType.Task
         member this.Validate() =
-            (this.Name |> System.String.IsNullOrEmpty |> not) &&
+            (this.Name |> NameValidator.IsValid) &&
             (this.Continuation <> Continuation.None) &&
             (this.Resource |> System.String.IsNullOrEmpty |> not) &&
             // unsupported properties
@@ -252,7 +252,7 @@ type public ParallelState() =
     interface IState with
         member this.StateType = StateType.Parallel
         member this.Validate() =
-            (this.Name |> System.String.IsNullOrEmpty |> not) &&
+            (this.Name |> NameValidator.IsValid) &&
             (this.Continuation <> Continuation.None) &&
             (this.Branches.Length > 0)
 
@@ -289,7 +289,7 @@ type public MapState() =
     interface IState with
         member this.StateType = StateType.Map
         member this.Validate() =
-            (this.Name |> System.String.IsNullOrEmpty |> not) &&
+            (this.Name |> NameValidator.IsValid) &&
             (this.Continuation <> Continuation.None) &&
             ((this.Iterator = null) <> (this.ItemProcessor = null)) &&
             (((this.Parameters.Length > 0) && (this.ItemSelector.Length > 0)) |> not) &&

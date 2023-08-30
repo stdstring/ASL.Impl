@@ -43,16 +43,16 @@ type StateMachineValidatorTests() =
                    """"S1": {"Type": "Succeed"}, "S2": {"Type": "Succeed"}}}"""
              // parallel
              yield """{"StartAt": "S0", "States": {"S0": {"Type": "Parallel", "End": true, """ +
-                   """"Branches": [{"StartAt": "SB1.0", "States": {"SB1.0": {"Type": "Succeed"}}}, {"StartAt": "SB2.0", "States": {"SB2.0": {"Type": "Succeed"}}}]}}}"""
+                   """"Branches": [{"StartAt": "SB1_0", "States": {"SB1_0": {"Type": "Succeed"}}}, {"StartAt": "SB2_0", "States": {"SB2_0": {"Type": "Succeed"}}}]}}}"""
              yield """{"StartAt": "S0", "States": {"S0": {"Type": "Parallel", "Next": "S1", """ +
-                   """"Branches": [{"StartAt": "SB1.0", "States": {"SB1.0": {"Type": "Succeed"}}}, {"StartAt": "SB2.0", "States": {"SB2.0": {"Type": "Succeed"}}}]}, """+
+                   """"Branches": [{"StartAt": "SB1_0", "States": {"SB1_0": {"Type": "Succeed"}}}, {"StartAt": "SB2_0", "States": {"SB2_0": {"Type": "Succeed"}}}]}, """+
                    """"S1": {"Type": "Succeed"}}}"""
              yield """{"StartAt": "S0", "States": {"S0": {"Type": "Parallel", "Next": "S1", """ +
-                   """"Branches": [{"StartAt": "SB1.0", "States": {"SB1.0": {"Type": "Succeed"}}}, {"StartAt": "SB2.0", "States": {"SB2.0": {"Type": "Succeed"}}}], """ +
+                   """"Branches": [{"StartAt": "SB1_0", "States": {"SB1_0": {"Type": "Succeed"}}}, {"StartAt": "SB2_0", "States": {"SB2_0": {"Type": "Succeed"}}}], """ +
                    """"Catch": [{"ErrorEquals": ["States.ALL"], "Next": "S1"}]}, """+
                    """"S1": {"Type": "Succeed"}}}"""
              yield """{"StartAt": "S0", "States": {"S0": {"Type": "Parallel", "Next": "S1", """ +
-                   """"Branches": [{"StartAt": "SB1.0", "States": {"SB1.0": {"Type": "Succeed"}}}, {"StartAt": "SB2.0", "States": {"SB2.0": {"Type": "Succeed"}}}], """ +
+                   """"Branches": [{"StartAt": "SB1_0", "States": {"SB1_0": {"Type": "Succeed"}}}, {"StartAt": "SB2_0", "States": {"SB2_0": {"Type": "Succeed"}}}], """ +
                    """"Catch": [{"ErrorEquals": ["States.ALL"], "Next": "S2"}]}, """ +
                    """"S1": {"Type": "Succeed"}, "S2": {"Type": "Succeed"}}}"""
         }

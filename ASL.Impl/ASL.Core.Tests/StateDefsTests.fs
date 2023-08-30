@@ -20,6 +20,29 @@ type StateDefsTests() =
         state.Comment <- "SomeComment"
         state.Validate() |> Assert.True
 
+    [<TestCase("iddqd", true)>]
+    [<TestCase("Iddqd", true)>]
+    [<TestCase("IDDQD", true)>]
+    [<TestCase("IDDQD666", true)>]
+    [<TestCase("666IDDQD666", true)>]
+    [<TestCase("666", true)>]
+    [<TestCase("IDDQD_666", true)>]
+    [<TestCase("IDDQD-666", true)>]
+    [<TestCase("_IDDQD-666_", true)>]
+    [<TestCase("-IDDQD_666-", true)>]
+    [<TestCase("", false)>]
+    [<TestCase(" ", false)>]
+    [<TestCase("\t", false)>]
+    [<TestCase("IDDQD.666", false)>]
+    [<TestCase("IDDQD/666", false)>]
+    [<TestCase("IDDQD\\666", false)>]
+    [<TestCase("IDDQD\"666", false)>]
+    [<TestCase("IDDQD'666", false)>]
+    [<TestCase("IDDQD|666", false)>]
+    member public this.FailStateNameValidation(name: string, validationResult: bool) =
+        let state = new FailState(Name = name, Error = "SomeError", Cause = "SomeCause")
+        Assert.AreEqual(validationResult, state.Validate())
+
     [<Test>]
     member public this.SucceedStateValidate() =
         let state = new SucceedState()
@@ -32,6 +55,29 @@ type StateDefsTests() =
         state.Validate() |> Assert.True
         state.OutputPath <- "SomeOutputPath"
         state.Validate() |> Assert.True
+
+    [<TestCase("iddqd", true)>]
+    [<TestCase("Iddqd", true)>]
+    [<TestCase("IDDQD", true)>]
+    [<TestCase("IDDQD666", true)>]
+    [<TestCase("666IDDQD666", true)>]
+    [<TestCase("666", true)>]
+    [<TestCase("IDDQD_666", true)>]
+    [<TestCase("IDDQD-666", true)>]
+    [<TestCase("_IDDQD-666_", true)>]
+    [<TestCase("-IDDQD_666-", true)>]
+    [<TestCase("", false)>]
+    [<TestCase(" ", false)>]
+    [<TestCase("\t", false)>]
+    [<TestCase("IDDQD.666", false)>]
+    [<TestCase("IDDQD/666", false)>]
+    [<TestCase("IDDQD\\666", false)>]
+    [<TestCase("IDDQD\"666", false)>]
+    [<TestCase("IDDQD'666", false)>]
+    [<TestCase("IDDQD|666", false)>]
+    member public this.SucceedStateNameValidation(name: string, validationResult: bool) =
+        let state = new SucceedState(Name = name)
+        Assert.AreEqual(validationResult, state.Validate())
 
     [<Test>]
     member public this.ChoiceStateValidate() =
@@ -49,6 +95,30 @@ type StateDefsTests() =
         state.Validate() |> Assert.True
         state.Default <- "SomeDefault"
         state.Validate() |> Assert.True
+
+    [<TestCase("iddqd", true)>]
+    [<TestCase("Iddqd", true)>]
+    [<TestCase("IDDQD", true)>]
+    [<TestCase("IDDQD666", true)>]
+    [<TestCase("666IDDQD666", true)>]
+    [<TestCase("666", true)>]
+    [<TestCase("IDDQD_666", true)>]
+    [<TestCase("IDDQD-666", true)>]
+    [<TestCase("_IDDQD-666_", true)>]
+    [<TestCase("-IDDQD_666-", true)>]
+    [<TestCase("", false)>]
+    [<TestCase(" ", false)>]
+    [<TestCase("\t", false)>]
+    [<TestCase("IDDQD.666", false)>]
+    [<TestCase("IDDQD/666", false)>]
+    [<TestCase("IDDQD\\666", false)>]
+    [<TestCase("IDDQD\"666", false)>]
+    [<TestCase("IDDQD'666", false)>]
+    [<TestCase("IDDQD|666", false)>]
+    member public this.ChoiceStateNameValidation(name: string, validationResult: bool) =
+        let choices = [|{Choice.Rule = {Condition.Variable = "SomeVar"; Condition.Check = ConditionCheck.IsPresent true} |> BoolExpr.TrueExpr; Choice.Next = "NextState"}|]
+        let state = new ChoiceState(Name = name, Choices = choices)
+        Assert.AreEqual(validationResult, state.Validate())
 
     [<Test>]
     member public this.WaitStateValidate() =
@@ -73,6 +143,29 @@ type StateDefsTests() =
         state.OutputPath <- "SomeOutputPath"
         state.Validate() |> Assert.True
 
+    [<TestCase("iddqd", true)>]
+    [<TestCase("Iddqd", true)>]
+    [<TestCase("IDDQD", true)>]
+    [<TestCase("IDDQD666", true)>]
+    [<TestCase("666IDDQD666", true)>]
+    [<TestCase("666", true)>]
+    [<TestCase("IDDQD_666", true)>]
+    [<TestCase("IDDQD-666", true)>]
+    [<TestCase("_IDDQD-666_", true)>]
+    [<TestCase("-IDDQD_666-", true)>]
+    [<TestCase("", false)>]
+    [<TestCase(" ", false)>]
+    [<TestCase("\t", false)>]
+    [<TestCase("IDDQD.666", false)>]
+    [<TestCase("IDDQD/666", false)>]
+    [<TestCase("IDDQD\\666", false)>]
+    [<TestCase("IDDQD\"666", false)>]
+    [<TestCase("IDDQD'666", false)>]
+    [<TestCase("IDDQD|666", false)>]
+    member public this.WaitStateNameValidation(name: string, validationResult: bool) =
+        let state = new WaitState(Name = name, Continuation = Continuation.End, WaitParameters = WaitParameters.Seconds 10)
+        Assert.AreEqual(validationResult, state.Validate())
+
     [<Test>]
     member public this.PassStateValidate() =
         let state = new PassState()
@@ -95,6 +188,29 @@ type StateDefsTests() =
         state.Validate() |> Assert.True
         state.Result <- new JObject()
         state.Validate() |> Assert.True
+
+    [<TestCase("iddqd", true)>]
+    [<TestCase("Iddqd", true)>]
+    [<TestCase("IDDQD", true)>]
+    [<TestCase("IDDQD666", true)>]
+    [<TestCase("666IDDQD666", true)>]
+    [<TestCase("666", true)>]
+    [<TestCase("IDDQD_666", true)>]
+    [<TestCase("IDDQD-666", true)>]
+    [<TestCase("_IDDQD-666_", true)>]
+    [<TestCase("-IDDQD_666-", true)>]
+    [<TestCase("", false)>]
+    [<TestCase(" ", false)>]
+    [<TestCase("\t", false)>]
+    [<TestCase("IDDQD.666", false)>]
+    [<TestCase("IDDQD/666", false)>]
+    [<TestCase("IDDQD\\666", false)>]
+    [<TestCase("IDDQD\"666", false)>]
+    [<TestCase("IDDQD'666", false)>]
+    [<TestCase("IDDQD|666", false)>]
+    member public this.PassStateNameValidation(name: string, validationResult: bool) =
+        let state = new PassState(Name = name, Continuation = Continuation.End)
+        Assert.AreEqual(validationResult, state.Validate())
 
     [<Test>]
     member public this.TaskStateValidate() =
@@ -135,6 +251,29 @@ type StateDefsTests() =
         state.HeartbeatParameters <- HeartbeatParameters.HeartbeatSecondsPath "SomePath"
         state.Validate() |> Assert.False
 
+    [<TestCase("iddqd", true)>]
+    [<TestCase("Iddqd", true)>]
+    [<TestCase("IDDQD", true)>]
+    [<TestCase("IDDQD666", true)>]
+    [<TestCase("666IDDQD666", true)>]
+    [<TestCase("666", true)>]
+    [<TestCase("IDDQD_666", true)>]
+    [<TestCase("IDDQD-666", true)>]
+    [<TestCase("_IDDQD-666_", true)>]
+    [<TestCase("-IDDQD_666-", true)>]
+    [<TestCase("", false)>]
+    [<TestCase(" ", false)>]
+    [<TestCase("\t", false)>]
+    [<TestCase("IDDQD.666", false)>]
+    [<TestCase("IDDQD/666", false)>]
+    [<TestCase("IDDQD\\666", false)>]
+    [<TestCase("IDDQD\"666", false)>]
+    [<TestCase("IDDQD'666", false)>]
+    [<TestCase("IDDQD|666", false)>]
+    member public this.TaskStateNameValidation(name: string, validationResult: bool) =
+        let state = new TaskState(Name = name, Continuation = Continuation.End, Resource = "SomeResource")
+        Assert.AreEqual(validationResult, state.Validate())
+
     [<Test>]
     member public this.ParallelStateValidate() =
         let state = new ParallelState()
@@ -163,6 +302,30 @@ type StateDefsTests() =
         state.Validate() |> Assert.True
         state.Catch <- [|{Catcher.ErrorEquals = [|"SomeError"|]; Catcher.Next = "NextState"; Catcher.ResultPath = "SomePath"}|]
         state.Validate() |> Assert.True
+
+    [<TestCase("iddqd", true)>]
+    [<TestCase("Iddqd", true)>]
+    [<TestCase("IDDQD", true)>]
+    [<TestCase("IDDQD666", true)>]
+    [<TestCase("666IDDQD666", true)>]
+    [<TestCase("666", true)>]
+    [<TestCase("IDDQD_666", true)>]
+    [<TestCase("IDDQD-666", true)>]
+    [<TestCase("_IDDQD-666_", true)>]
+    [<TestCase("-IDDQD_666-", true)>]
+    [<TestCase("", false)>]
+    [<TestCase(" ", false)>]
+    [<TestCase("\t", false)>]
+    [<TestCase("IDDQD.666", false)>]
+    [<TestCase("IDDQD/666", false)>]
+    [<TestCase("IDDQD\\666", false)>]
+    [<TestCase("IDDQD\"666", false)>]
+    [<TestCase("IDDQD'666", false)>]
+    [<TestCase("IDDQD|666", false)>]
+    member public this.ParallelStateNameValidation(name: string, validationResult: bool) =
+        let branches = [|new StateMachine(StartAt = "SomeStart", States = [|new SucceedState(Name = "SomeStart")|])|]
+        let state = new ParallelState(Name = name, Continuation = Continuation.End, Branches = branches)
+        Assert.AreEqual(validationResult, state.Validate())
 
     [<Test>]
     member public this.MapStateValidate() =
@@ -221,6 +384,30 @@ type StateDefsTests() =
         state.ToleratedFailureCount <- 1
         state.Validate() |> Assert.False
         state.ToleratedFailureCount <- 0
+
+    [<TestCase("iddqd", true)>]
+    [<TestCase("Iddqd", true)>]
+    [<TestCase("IDDQD", true)>]
+    [<TestCase("IDDQD666", true)>]
+    [<TestCase("666IDDQD666", true)>]
+    [<TestCase("666", true)>]
+    [<TestCase("IDDQD_666", true)>]
+    [<TestCase("IDDQD-666", true)>]
+    [<TestCase("_IDDQD-666_", true)>]
+    [<TestCase("-IDDQD_666-", true)>]
+    [<TestCase("", false)>]
+    [<TestCase(" ", false)>]
+    [<TestCase("\t", false)>]
+    [<TestCase("IDDQD.666", false)>]
+    [<TestCase("IDDQD/666", false)>]
+    [<TestCase("IDDQD\\666", false)>]
+    [<TestCase("IDDQD\"666", false)>]
+    [<TestCase("IDDQD'666", false)>]
+    [<TestCase("IDDQD|666", false)>]
+    member public this.MapStateNameValidation(name: string, validationResult: bool) =
+        let itemProcessor = new StateMachine(StartAt = "SomeStart", States = [|new SucceedState(Name = "SomeStart")|])
+        let state = new MapState(Name = name, Continuation = Continuation.End, ItemProcessor = itemProcessor)
+        Assert.AreEqual(validationResult, state.Validate())
 
     [<Test>]
     member public this.StateMachineValidate() =

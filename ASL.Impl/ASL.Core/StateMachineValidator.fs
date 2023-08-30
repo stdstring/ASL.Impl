@@ -2,24 +2,24 @@
 
 open System.Collections.Generic
 
-type Path = string list
+type public Path = string list
 
-type WarningReason =
+type public WarningReason =
     | PossibleCycle
     | EndViaCatchLinksOnly
 
-type Warning = {Path: Path; Reason: WarningReason}
+type public Warning = {Path: Path; Reason: WarningReason}
 
-type ErrorReason =
+type public ErrorReason =
     | UnknownState
     | EmptyEndStates
     | InaccessibleStates
 
-type Error = {Path: Path; Reason: ErrorReason}
+type public Error = {Path: Path; Reason: ErrorReason}
 
-type ValidateResult = {Errors: IList<Error>; Warnings: IList<Warning>}
+type public ValidateResult = {Errors: IList<Error>; Warnings: IList<Warning>}
 
-module StateMachineValidatorImpl =
+module internal StateMachineValidatorImpl =
 
     type GraphNode = {Name: string; LinksTo: string[]; CatchLinksTo: string[]; End: bool}
 
@@ -37,7 +37,7 @@ module StateMachineValidatorImpl =
 
 open StateMachineValidatorImpl
 
-type StateMachineValidator() =
+type public StateMachineValidator() =
 
     let createGraphNode (name: string) (linksTo: string[]) (catchLinksTo: string[]) (isEnd: bool) =
         {GraphNode.Name = name; GraphNode.LinksTo = linksTo; GraphNode.CatchLinksTo = catchLinksTo; GraphNode.End = isEnd}
